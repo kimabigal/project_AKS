@@ -1,0 +1,38 @@
+deployment:
+  name: web
+  replicas: 1
+  port: 3000
+  image:
+    repository: myacr12067.azurecr.io/web-app
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  imagePullSecretName: acr-pull
+
+  probes:
+    path: /health
+    port: 3000
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+service:
+  name: web-service
+  port: 80
+  type: LoadBalancer
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 5
+  cpuTarget: 50
+
+env:
+  NODE_ENV: "production"
+
+secrets:
+  DB_USER: ""
+  DB_PASS: ""

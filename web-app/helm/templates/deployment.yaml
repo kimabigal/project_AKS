@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels:
+    app: {{ .Values.deployment.name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.name }}
+    spec:
+      imagePullSecrets:
+      - name: {{ .Values.deployment.imagePullSecretName }}
+      containers:
+      - name: {{ .Values.deployment.name }}
+        image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+        imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.deployment.port }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.deployment.name }}-config
+        - secretRef:
+            name: {{ .Values.deployment.name }}-secret
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.deployment.probes.path }}
+            port: {{ .Values.deployment.probes.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.deployment.probes.path }}
+            port: {{ .Values.deployment.probes.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: {{ .Values.deployment.resources.requests.cpu | quote }}
+            memory: {{ .Values.deployment.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.deployment.resources.limits.cpu | quote }}
+            memory: {{ .Values.deployment.resources.limits.memory | quote }}
+
+
