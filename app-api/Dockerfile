@@ -1,12 +1,13 @@
-FROM node:20-alpine
+FROM node:18
 
-WORKDIR /app/api
+WORKDIR /usr/src/app
 
-COPY api/package*.json ./
-RUN npm ci --only=production
+COPY package.json .
 
-COPY api/ .
+RUN npm install
 
-EXPOSE 3000
+COPY . .
 
-CMD ["node", "app.js"]
+EXPOSE 3001
+
+CMD ["npm","start"]
