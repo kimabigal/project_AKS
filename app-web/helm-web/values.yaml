@@ -9,8 +9,14 @@ deployment:
   imagePullSecretName: acr-pull
 
   probes:
-    path: /health
-    port: 3000
+    liveness:
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readiness:
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 5
 
   resources:
     requests:
@@ -28,11 +34,14 @@ service:
 hpa:
   minReplicas: 1
   maxReplicas: 5
-  cpuTarget: 50
+  cpuTarget: 50  # target average CPU utilization (%)
 
+# Non-secret env (ConfigMap)
 env:
   NODE_ENV: "production"
 
+# Demo secrets for local testing. For real use, create these via kubectl and
+# delete templates/secret.yaml from the chart.
 secrets:
   DB_USER: ""
   DB_PASS: ""
