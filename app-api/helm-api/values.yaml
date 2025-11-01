@@ -1,0 +1,48 @@
+deployment:
+  name: api
+  replicas: 1
+  port: 4000
+  image:
+    repository: myacr12067.azurecr.io/api-app
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  imagePullSecretName: acr-pull
+
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readiness:
+      path: /healthz
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+service:
+  name: api-service
+  port: 80
+  type: ClusterIP
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 5
+  cpuTarget: 50
+
+
+env:
+  NODE_ENV: "production"
+
+
+secrets:
+  DB_HOST: ""     
+  DB_NAME: ""     
+  DB_USER: ""
+  DB_PASS: ""
