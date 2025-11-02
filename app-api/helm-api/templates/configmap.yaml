@@ -4,3 +4,4 @@ metadata:
   name: {{ .Values.deployment.name }}-config
 data:
   NODE_ENV: {{ .Values.env.NODE_ENV | quote }}
+  PORT: {{ .Values.env.PORT | quote }}

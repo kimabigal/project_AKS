@@ -1,23 +1,31 @@
 deployment:
   name: api
   replicas: 1
-  port: 4000
+  port: 3001
   image:
     repository: myacr12067.azurecr.io/api-app
-    tag: "latest"
+    tag: "v1.0.0"
     pullPolicy: IfNotPresent
   imagePullSecretName: acr-pull
 
+  # Probes referenced like .Values.deployment.probes.readiness / liveness
   probes:
-    liveness:
-      path: /healthz
-      initialDelaySeconds: 10
-      periodSeconds: 10
     readiness:
-      path: /healthz
-      initialDelaySeconds: 5
-      periodSeconds: 5
+      path: /health        # change to /health if your app uses that
+      port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
+    liveness:
+      path: /health
+      port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
 
+  # REQUIRED by your templates: .Values.deployment.resources.requests/limits.*
   resources:
     requests:
       cpu: "100m"
@@ -28,7 +36,7 @@ deployment:
 
 service:
   name: api-service
-  port: 80
+  port: 3001
   type: ClusterIP
 
 hpa:
@@ -36,13 +44,14 @@ hpa:
   maxReplicas: 5
   cpuTarget: 50
 
-
+# Goes into ConfigMap via templates/configmap.yaml
 env:
   NODE_ENV: "production"
+  PORT: "3001"
 
-
+# If you wire DB later (Secret)
 secrets:
-  DB_HOST: ""     
-  DB_NAME: ""     
+  DB_HOST: ""
+  DB_NAME: ""
   DB_USER: ""
   DB_PASS: ""

@@ -45,3 +45,9 @@ variable "node_vm_size" {
   type        = string
   default     = "Standard_D2s_v3"
 }
+
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+} # new
+ 
