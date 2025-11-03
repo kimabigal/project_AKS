@@ -4,19 +4,13 @@ deployment:
   port: 3000
   image:
     repository: myacr12067.azurecr.io/web-app
-    tag: "latest"
+    tag: "v1.0.3"
     pullPolicy: IfNotPresent
   imagePullSecretName: acr-pull
 
   probes:
-    liveness:
-      path: /health
-      initialDelaySeconds: 10
-      periodSeconds: 10
-    readiness:
-      path: /health
-      initialDelaySeconds: 5
-      periodSeconds: 5
+    path: /health
+    port: 3000
 
   resources:
     requests:
@@ -34,14 +28,12 @@ service:
 hpa:
   minReplicas: 1
   maxReplicas: 5
-  cpuTarget: 50  # target average CPU utilization (%)
+  cpuTarget: 50
 
-# Non-secret env (ConfigMap)
 env:
   NODE_ENV: "production"
+  API_URL: "http://api-service.api.svc.cluster.local:3001" #for separate repos when we split 
 
-# Demo secrets for local testing. For real use, create these via kubectl and
-# delete templates/secret.yaml from the chart.
+# secret for future
 secrets:
-  DB_USER: ""
-  DB_PASS: ""
+  API_KEY: ""
