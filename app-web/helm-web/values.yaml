@@ -3,10 +3,10 @@ deployment:
   replicas: 1
   port: 3000
   image:
-    repository: acrf40955.azurecr.io/web-app   # <- use your new ACR
-    tag: "v1.0.0"                               # <- pin a tag; avoid "latest"
+    repository: acrf40955.azurecr.io/web-app   
+    tag: "v1.0.0"                              
     pullPolicy: IfNotPresent
-  # imagePullSecretName: acr-pull               # omit if AKS is attached to ACR
+  
 
   probes:
     readiness:
@@ -44,7 +44,7 @@ hpa:
 
 env:
   NODE_ENV: "production"
-  API_URL: "http://api-service.api.svc.cluster.local:3001"  # <- points web to API
+  API_URL: "http://api-service.api.svc.cluster.local:3001"  
 
 secrets:
   DB_USER: ""
