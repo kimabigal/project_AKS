@@ -2,11 +2,11 @@ FROM node:18 AS builder
 
 WORKDIR /usr/src/app
 
-COPY web/package.json .
+COPY package.json .
 
 RUN npm install
 
-COPY web .
+COPY . .
 
 # next stage
 FROM node:18-slim

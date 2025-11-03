@@ -3,14 +3,26 @@ deployment:
   replicas: 1
   port: 3000
   image:
-    repository: myacr12067.azurecr.io/web-app
-    tag: "v1.0.3"
+    repository: acrf40955.azurecr.io/web-app   # <- use your new ACR
+    tag: "v1.0.0"                               # <- pin a tag; avoid "latest"
     pullPolicy: IfNotPresent
-  imagePullSecretName: acr-pull
+  # imagePullSecretName: acr-pull               # omit if AKS is attached to ACR
 
   probes:
-    path: /health
-    port: 3000
+    readiness:
+      path: /health
+      port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 5
+    liveness:
+      path: /health
+      port: 3000
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 5
 
   resources:
     requests:
@@ -32,8 +44,8 @@ hpa:
 
 env:
   NODE_ENV: "production"
-  API_URL: "http://api-service.api.svc.cluster.local:3001" #for separate repos when we split 
+  API_URL: "http://api-service.api.svc.cluster.local:3001"  # <- points web to API
 
-# secret for future
 secrets:
-  API_KEY: ""
+  DB_USER: ""
+  DB_PASS: ""

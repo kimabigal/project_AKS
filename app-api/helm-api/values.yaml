@@ -3,14 +3,26 @@ deployment:
   replicas: 1
   port: 3001
   image:
-    repository: myacr12067.azurecr.io/api-app
-    tag: "v1.0.1"
+    repository: acrf40955.azurecr.io/api-app
+    tag: "v1.0.0"
     pullPolicy: IfNotPresent
-  imagePullSecretName: acr-pull
+  # imagePullSecretName: acr-pull   # <-- omit if cluster is attached to ACR
 
   probes:
-    path: /health
-    port: 3001
+    readiness:
+      path: /health
+      port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
+    liveness:
+      path: /health
+      port: 3001
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
 
   resources:
     requests:
@@ -32,10 +44,10 @@ hpa:
 
 env:
   NODE_ENV: "production"
-  DB_HOST: "mysql-service"
-  DB_PORT: "3306"
+  PORT: "3001"
 
-# will fill later
 secrets:
+  DB_HOST: ""
+  DB_NAME: ""
   DB_USER: ""
   DB_PASS: ""
