@@ -1,5 +1,5 @@
 # project_AKS
-
+```bash
 1. Clone the repo
 git clone https://github.com/kimabigal/project_AKS.git
 cd project_AKS

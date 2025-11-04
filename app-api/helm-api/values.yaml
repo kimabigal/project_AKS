@@ -6,7 +6,6 @@ deployment:
     repository: acrf40955.azurecr.io/api-app
     tag: "v1.0.0"
     pullPolicy: IfNotPresent
-  # imagePullSecretName: acr-pull   # <-- omit if cluster is attached to ACR
 
   probes:
     readiness:
