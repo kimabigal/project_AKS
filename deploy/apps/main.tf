@@ -76,10 +76,10 @@ resource "helm_release" "api" {
   }
   set {
     name  = "deployment.imagePullSecretName"
-    value = var.image_pull_secret # remove this set if AKS is attached to ACR
+    value = var.image_pull_secret 
   }
 
-  # ports: API listens on 3000 (container, probes, service)
+  
   set {
     name  = "deployment.port"
     value = "3000"
@@ -97,13 +97,11 @@ resource "helm_release" "api" {
     value = "3000"
   }
 
-  # service type
   set {
     name  = "service.type"
     value = "ClusterIP"
   }
 
-  # env + secrets (ensure Secret has DB values)
   set {
     name  = "env.DB_HOST"
     value = "mysql"
@@ -150,16 +148,16 @@ resource "helm_release" "web" {
   }
   set {
     name  = "deployment.imagePullSecretName"
-    value = var.image_pull_secret # remove this set if AKS is attached to ACR
+    value = var.image_pull_secret # if AKS is not attached to ACR
   }
 
-  # service type
+ 
   set {
     name  = "service.type"
     value = "LoadBalancer"
   }
 
-  # WEB → API URL (Service is 'api-service', API port now 3000)
+
   set {
     name  = "env.API_HOST"
     value = "http://api-service:3000"
