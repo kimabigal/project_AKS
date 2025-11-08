@@ -4,10 +4,10 @@ image:
   pullPolicy: IfNotPresent
 
 auth:
-  rootPassword: "rootpass123"   # overridden by Terraform
-  user: "kaizen"                # overridden by Terraform
-  password: "Hello123!"         # overridden by Terraform
-  database: "hello"             # overridden by Terraform
+  rootPassword: "rootpass123"   
+  user: "kaizen"                
+  password: "Hello123!"         
+  database: "hello"             
 
 service:
   port: 3306
@@ -16,7 +16,7 @@ persistence:
   enabled: true
   accessModes: ["ReadWriteOnce"]
   size: 8Gi
-  storageClassName: ""          # leave empty to use default storage class
+  storageClassName: ""          
 
 resources:
   requests:

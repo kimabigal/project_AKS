@@ -5,7 +5,6 @@ metadata:
   labels:
     app: mysql
 spec:
-  # Headless service for stable DNS to pods: mysql.apps.svc.cluster.local
   clusterIP: None
   selector:
     app: mysql

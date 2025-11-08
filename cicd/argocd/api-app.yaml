@@ -6,7 +6,7 @@ metadata:
 spec:
   project: my-project
   source:
-    repoURL: https://github.com/<your-user>/<your-repo>.git
+    repoURL: https://github.com/kimabigal/project_AKS.git
     targetRevision: main
     path: app-api/helm-api
     helm:

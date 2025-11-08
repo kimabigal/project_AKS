@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: argocd.local   # change later to real domain if you do cert-manager bonus
+  - host: argocd.local   # to change to the nds (if we work on bonus task)
     http:
       paths:
       - path: /
