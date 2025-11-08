@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+spec:
+  project: my-project
+  source:
+    repoURL: https://github.com/<your-user>/<your-repo>.git
+    targetRevision: main
+    path: app-web/helm-web
+    helm:
+      values: |
+        image:
+          repository: myacr12067.azurecr.io/web-app
+          tag: "latest"
+        service:
+          type: LoadBalancer
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true

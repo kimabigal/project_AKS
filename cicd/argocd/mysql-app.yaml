@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql
+  namespace: argocd
+spec:
+  project: my-project
+  source:
+    repoURL: https://github.com/<your-user>/<your-repo>.git
+    targetRevision: main
+    path: app-mysql/helm-sql
+    helm:
+      values: |
+        image:
+          repository: mysql
+          tag: "8.0"
+        auth:
+          rootPassword: rootpass123
+          user: kaizen
+          password: kaizenpass123
+          database: appdb
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
