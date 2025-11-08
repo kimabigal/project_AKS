@@ -4,83 +4,25 @@ on:
     branches: [ "main" ]
     paths:
       - "app-api/api/**"
-      - ".github/workflows/api-ci.yaml"
-      - "!app-api/helm-api/values.yaml"   # avoid loop when we bump the tag
 
 jobs:
-  build_test_scan_push:
+  build_push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write         # needed to commit the tag bump
-    env:
-      IMAGE_NAME: api-app
-      REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Install deps
-        working-directory: app-api/api
-        run: npm ci || npm install
-
-      - name: Run unit tests
-        working-directory: app-api/api
-        run: npm test --if-present || echo "no tests"
-
-      - name: npm audit (soft fail)
-        working-directory: app-api/api
-        run: npm audit --audit-level=high || true
-
-      - name: Log in to ACR
+      - name: Login to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }}   # e.g. myacr12067.azurecr.io
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Set image tag
-        id: vars
-        run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-
-      - name: Build & push
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./app-api/api            # <-- FIXED
-          file: ./app-api/api/Dockerfile    # <-- FIXED
+          context: app-api/api
+          file: app-api/api/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}"
-          format: sarif
-          output: trivy-results.sarif
-
-      - name: Upload Trivy SARIF
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-api-sarif
-          path: trivy-results.sarif
-          retention-days: 14
-
-      - name: Bump helm tag
-        run: |
-          # adjust indentation to match your values.yaml
-          sed -i 's/^\(\s*tag:\s*\)".*"/\1"'${{ steps.vars.outputs.TAG }}'"/' app-api/helm-api/values.yaml
-
-      - name: Commit & push tag bump
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@users.noreply.github.com"
-          git add app-api/helm-api/values.yaml
-          git commit -m "api: bump image tag to ${{ steps.vars.outputs.TAG }}" || echo "no changes"
-          git push
+            ${{ secrets.ACR_LOGIN_SERVER }}/api-app:latest

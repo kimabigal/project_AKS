@@ -1,49 +1,54 @@
-template = '''
+podTemplate(cloud: 'kubernetes', label: 'docker',
+  yaml: '''
 apiVersion: v1
 kind: Pod
-metadata:
-  labels:
-    run: docker
-  name: docker
 spec:
   containers:
-  - name: docker
+  - name: dind
     image: docker:24-dind
-    tty: true
     securityContext:
       privileged: true
-  volumes:
+    args: ["--host=tcp://0.0.0.0:2375","--tls=false"]
   - name: docker
+    image: docker:24-cli
+    env:
+    - name: DOCKER_HOST
+      value: tcp://localhost:2375
+    tty: true
+  volumes:
+  - name: docker-graph
     emptyDir: {}
-'''
+''') {
 
-podTemplate(cloud: 'kubernetes', label: 'docker', yaml: template) {
   node('docker') {
-    container('docker') {
+    stage('Checkout SCM') {
+      git branch: 'main', url: 'https://github.com/kimabigal/project_AKS.git'
+    }
 
-      stage('Checkout SCM') {
-        git branch: 'main', url: 'https://github.com/<your-user>/<your-repo>.git'
-      }
+    withCredentials([usernamePassword(credentialsId: 'acr-creds',
+                                      usernameVariable: 'ACR_USER',
+                                      passwordVariable: 'ACR_PASS')]) {
+      container('docker') {
 
-      withCredentials([usernamePassword(credentialsId: 'acr-creds',
-                                        passwordVariable: 'ACR_PASS',
-                                        usernameVariable: 'ACR_USER')]) {
-
-        stage('Docker Login') {
-          sh 'docker login myacr12067.azurecr.io -u $ACR_USER -p $ACR_PASS'
+        stage('Login to ACR') {
+          sh '''
+            echo "$ACR_PASS" | docker login myacr12067.azurecr.io -u "$ACR_USER" --password-stdin
+          '''
         }
 
         stage('Build & Push API') {
           sh '''
-          docker build -t myacr12067.azurecr.io/api-app:1.0.0 -f app-api/api/Dockerfile .
-          docker push myacr12067.azurecr.io/api-app:1.0.0
+            docker build -t myacr12067.azurecr.io/api-app:latest \
+              -f app-api/api/Dockerfile app-api/api
+            docker push myacr12067.azurecr.io/api-app:latest
           '''
         }
 
         stage('Build & Push Web') {
           sh '''
-          docker build -t myacr12067.azurecr.io/web-app:1.0.0 -f app-web/web/Dockerfile .
-          docker push myacr12067.azurecr.io/web-app:1.0.0
+            docker build -t myacr12067.azurecr.io/web-app:latest \
+              -f app-web/web/Dockerfile app-web/web
+            docker push myacr12067.azurecr.io/web-app:latest
           '''
         }
       }
