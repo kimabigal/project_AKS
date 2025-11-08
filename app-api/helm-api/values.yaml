@@ -4,7 +4,7 @@ deployment:
   port: 3001
   image:
     repository: acrf40955.azurecr.io/api-app
-    tag: "v1.0.0"
+    tag: "3cbcea4"
     pullPolicy: IfNotPresent
 
   probes:
