@@ -148,7 +148,7 @@ resource "helm_release" "web" {
   }
   set {
     name  = "deployment.imagePullSecretName"
-    value = var.image_pull_secret # if AKS is not attached to ACR
+    value = var.image_pull_secret 
   }
 
  
