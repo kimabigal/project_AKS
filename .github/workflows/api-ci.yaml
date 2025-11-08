@@ -3,68 +3,68 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'app-api/**'
-      - '.github/workflows/api-ci.yml'
+      - "app-api/api/**"
+      - ".github/workflows/api-ci.yaml"
+      - "!app-api/helm-api/values.yaml"   # avoid loop when we bump the tag
 
 jobs:
   build_test_scan_push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write         # needed to commit the tag bump
     env:
       IMAGE_NAME: api-app
       REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- Node build & tests (adjust if your API is Node) ---
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
+
       - name: Install deps
-        run: |
-          cd app-api/api
-          npm ci || npm install
+        working-directory: app-api/api
+        run: npm ci || npm install
+
       - name: Run unit tests
-        run: |
-          cd app-api/api
-          npm test --if-present || echo "no tests"
+        working-directory: app-api/api
+        run: npm test --if-present || echo "no tests"
 
-      # --- Security: npm audit (soft fail) ---
-      - name: npm audit
-        run: |
-          cd app-api/api
-          npm audit --audit-level=high || true
+      - name: npm audit (soft fail)
+        working-directory: app-api/api
+        run: npm audit --audit-level=high || true
 
-      # --- Login to ACR ---
-      - name: Docker login to ACR
+      - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}   # e.g. myacr12067.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      # --- Build & push image ---
       - name: Set image tag
         id: vars
-        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-      - name: Build and push
+        run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push
         uses: docker/build-push-action@v6
         with:
-          context: app-api
-          file: app-api/api/Dockerfile
+          context: ./app-api/api            # <-- FIXED
+          file: ./app-api/api/Dockerfile    # <-- FIXED
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      # --- Trivy image scan (like class CI.yml) ---
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}"
+          format: sarif
+          output: trivy-results.sarif
+
       - name: Upload Trivy SARIF
         uses: actions/upload-artifact@v4
         with:
@@ -72,16 +72,15 @@ jobs:
           path: trivy-results.sarif
           retention-days: 14
 
-      # --- Bump Helm values tag so ArgoCD deploys ---
       - name: Bump helm tag
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
-          # if you prefer yq, install it; using sed for simplicity
-          sed -i "s/^  tag: \".*\"/  tag: \"${{ steps.vars.outputs.TAG }}\"/" app-api/helm-api/values.yaml
+          # adjust indentation to match your values.yaml
+          sed -i 's/^\(\s*tag:\s*\)".*"/\1"'${{ steps.vars.outputs.TAG }}'"/' app-api/helm-api/values.yaml
+
       - name: Commit & push tag bump
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add app-api/helm-api/values.yaml
-          git commit -m "api: bump image tag to ${{ steps.vars.outputs.TAG }}"
+          git commit -m "api: bump image tag to ${{ steps.vars.outputs.TAG }}" || echo "no changes"
           git push

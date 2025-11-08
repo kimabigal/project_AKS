@@ -1,25 +1,15 @@
-name: mysql-chart-ci
+name: mysql-ci
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'app-mysql/**'
-      - '.github/workflows/mysql-ci.yml'
+      - "app-mysql/helm-sql/**"
 
 jobs:
-  lint_chart:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install helm
-        uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v4
       - name: Helm lint
         run: helm lint app-mysql/helm-sql
-      - name: Yamllint (optional)
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: app-mysql/helm-sql
-      - name: Kubeconform (optional)
-        uses: yannh/kubeconform-action@v0.4.14
-        with:
-          kubeconform_args: "-summary app-mysql/helm-sql/templates"

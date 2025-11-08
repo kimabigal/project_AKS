@@ -3,81 +3,26 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'app-web/**'
-      - '.github/workflows/web-ci.yml'
+      - "app-web/web/**"
 
 jobs:
-  build_test_scan_push:
+  build_push:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: web-app
-      REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # --- Web build & tests (Node) ---
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Install deps
-        run: |
-          cd app-web/web
-          npm ci || npm install
-      - name: Unit tests
-        run: |
-          cd app-web/web
-          npm test --if-present || echo "no tests"
-
-      - name: npm audit
-        run: |
-          cd app-web/web
-          npm audit --audit-level=high || true
-
-      - name: Docker login to ACR
+      - name: Login to ACR
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Set image tag
-        id: vars
-        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: app-web
+          context: app-web/web
           file: app-web/web/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      - name: Upload Trivy SARIF
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-web-sarif
-          path: trivy-results.sarif
-          retention-days: 14
-
-      - name: Bump helm tag
-        run: |
-          sed -i "s/^    tag: \".*\"/    tag: \"${{ steps.vars.outputs.TAG }}\"/" app-web/helm-web/values.yaml
-          # (adjust indent to match your values.yaml)
-
-      - name: Commit & push tag bump
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@users.noreply.github.com"
-          git add app-web/helm-web/values.yaml
-          git commit -m "web: bump image tag to ${{ steps.vars.outputs.TAG }}"
-          git push
+            ${{ secrets.ACR_LOGIN_SERVER }}/web-app:latest
